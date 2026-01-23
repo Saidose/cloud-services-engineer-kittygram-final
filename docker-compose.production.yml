@@ -5,12 +5,18 @@ volumes:
   static:
   media:
 
+networks:
+  internal_network:
+    driver: bridge
+
 services:
   postgres:
     image: postgres:13.10
     env_file: .env
     volumes:
       - pg_data:/var/lib/postgresql/data
+    networks:
+      - internal_network
 
   backend:
     image: gelderdasgeld/kittygram_backend:latest
@@ -21,22 +27,27 @@ services:
       - media:/app/media
     depends_on:
       - postgres
+    networks:
+      - internal_network
 
   frontend:
     image: gelderdasgeld/kittygram_frontend:latest
     env_file: .env
-    command: cp -r /app/build/. /frontend_static/
     volumes:
       - static:/frontend_static
+    networks:
+      - internal_network
 
   nginx:
     image: gelderdasgeld/kittygram_gateway:latest
     env_file: .env
     ports:
-      - "8000:80"
+      - "80:80"
     volumes:
-      - static:/usr/share/nginx/html/
-      - media:/usr/share/nginx/html/media/
+      - static:/var/html/static
+      - media:/var/html/media
     depends_on:
       - backend
       - frontend
+    networks:
+      - internal_network

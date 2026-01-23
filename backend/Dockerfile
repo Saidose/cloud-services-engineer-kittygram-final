@@ -1,6 +1,13 @@
-FROM python:3.10
+FROM python:3.9-slim
+
 WORKDIR /app
-COPY requirements.txt .
+
+RUN pip install gunicorn==20.1.0
+
+COPY requirements.txt ./
+
 RUN pip install -r requirements.txt --no-cache-dir
+
 COPY . .
-CMD python manage.py runserver 0:8000
+EXPOSE 8000
+CMD ["gunicorn", "kittygram_backend.wsgi:application", "--bind", "0.0.0.0:8000"]
