@@ -131,7 +131,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           source: "docker-compose.production.yml,nginx/nginx.conf"
-          target: "~/kittygram"
+          target: "kittygram"
 
       - name: Deploy with Docker Compose
         uses: appleboy/ssh-action@v0.1.10
