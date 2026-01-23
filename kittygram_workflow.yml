@@ -184,4 +184,4 @@ jobs:
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: "Ура, оно задеплоилось ;_;"
+          message: "Задеплоилось мам"
