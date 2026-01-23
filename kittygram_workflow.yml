@@ -184,4 +184,8 @@ jobs:
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: "Задеплоилось мам"
+          message: |
+            Деплой успешный!
+            Ссылка на коммит https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+            Отправленный ${{ github.actor }}
+            C сообщением ${{ github.event.commits[0].message }}
