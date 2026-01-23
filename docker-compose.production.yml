@@ -13,7 +13,7 @@ services:
       - pg_data:/var/lib/postgresql/data
 
   backend:
-    image: krosy/kittygram_backend:latest
+    image: gelderdasgeld/kittygram_backend:latest
     restart: always
     env_file: .env
     volumes:
@@ -23,14 +23,14 @@ services:
       - postgres
 
   frontend:
-    image: krosy/kittygram_frontend:latest
+    image: gelderdasgeld/kittygram_frontend:latest
     env_file: .env
     command: cp -r /app/build/. /frontend_static/
     volumes:
       - static:/frontend_static
 
   nginx:
-    image: krosy/kittygram_gateway:latest
+    image: gelderdasgeld/kittygram_gateway:latest
     env_file: .env
     ports:
       - "8000:80"
