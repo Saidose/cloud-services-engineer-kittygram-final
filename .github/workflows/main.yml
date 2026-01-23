@@ -118,8 +118,6 @@ jobs:
   deploy:
     name: Deploy to server
     needs: build_and_push
-    env:
-      ENV_DATA: ${{ secrets.ENV_FILE }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -144,7 +142,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd kittygram
-            echo "$ENV_DATA" > .env
+            echo "${{ secrets.ENV_FILE }}" > .env
             sudo docker compose -f docker-compose.production.yml pull
             sudo docker compose -f docker-compose.production.yml down
             sudo docker compose -f docker-compose.production.yml up -d
