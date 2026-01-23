@@ -118,6 +118,8 @@ jobs:
   deploy:
     name: Deploy to server
     needs: build_and_push
+    env:
+      ENV_DATA: ${{ secrets.ENV_FILE }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -143,6 +145,7 @@ jobs:
           script: |
             cd kittygram
             echo "$ENV_DATA" > .env
+            echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" >> .env
             sudo docker compose -f docker-compose.production.yml pull
             sudo docker compose -f docker-compose.production.yml down
             sudo docker compose -f docker-compose.production.yml up -d
