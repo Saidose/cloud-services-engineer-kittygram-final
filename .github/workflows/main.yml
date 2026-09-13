@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - first
+      - terraform-branch
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -247,21 +248,3 @@ jobs:
     - name: Run tests
       run: |
         pytest -c tests.yml tests
-
-
-
-  notify:
-    name: Notify
-    needs: post_deploy_tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Send Telegram notification
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: |
-            Деплой успешный!
-            Ссылка на коммит https://github.com/${{ github.repository }}/commit/${{ github.sha }}
-            Отправленный ${{ github.actor }}
-            C сообщением ${{ github.event.commits[0].message }}
