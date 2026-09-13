@@ -1,0 +1,85 @@
+name: Terraform infrastructure
+
+on:
+  push:
+    branches:
+      - terraform-branch
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Действие Terraform
+        required: true
+        default: plan
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: Terraform ${{ inputs.action || 'plan' }}
+    runs-on: ubuntu-latest
+    outputs:
+      vm_public_ip: ${{ steps.vm_public_ip.outputs.value }}
+    defaults:
+      run:
+        working-directory: infra
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      TF_CLI_CONFIG_FILE: ${{ github.workspace }}/infra/terraformrc
+      TF_VAR_yc_service_account_key_file: ${{ secrets.YC_SERVICE_ACCOUNT_KEY_JSON }}
+      TF_VAR_yc_cloud_id: ${{ secrets.YC_CLOUD_ID }}
+      TF_VAR_yc_folder_id: ${{ secrets.YC_FOLDER_ID }}
+      TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.16.1
+          terraform_wrapper: false
+
+      - name: Initialise the S3 backend
+        run: >-
+          terraform init -reconfigure
+          -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
+          -backend-config="key=${{ secrets.TF_STATE_KEY }}"
+          -backend-config="access_key=${{ secrets.YC_S3_ACCESS_KEY }}"
+          -backend-config="secret_key=${{ secrets.YC_S3_SECRET_KEY }}"
+
+      - name: Validate configuration
+        run: terraform validate
+
+      # Push выполняет только plan. apply и destroy — через кнопку.
+      - name: Run Terraform
+        env:
+          ACTION: ${{ inputs.action || 'plan' }}
+        run: |
+          case "$ACTION" in
+            plan) terraform plan -no-color ;;
+            apply) terraform apply -auto-approve -no-color ;;
+            destroy) terraform destroy -auto-approve -no-color ;;
+            *) echo "Unsupported Terraform action: $ACTION" >&2; exit 1 ;;
+          esac
+
+      - name: Publish the static VM IP
+        id: vm_public_ip
+        if: ${{ inputs.action == 'apply' }}
+        run: echo "value=$(terraform output -raw vm_public_ip)" >> "$GITHUB_OUTPUT"
+
+  deploy_application:
+    name: Deploy Kittygram after infrastructure apply
+    needs: terraform
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'apply' && needs.terraform.result == 'success' }}
+    uses: ./.github/workflows/main.yml
+    with:
+      vm_public_ip: ${{ needs.terraform.outputs.vm_public_ip }}
+    secrets: inherit

@@ -15,23 +15,29 @@ services:
     env_file: .env
     volumes:
       - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - internal_network
 
   backend:
-    image: gelderdasgeld/kittygram_backend:latest
+    image: ${DOCKERHUB_USERNAME}/kittygram_backend:latest
     restart: always
     env_file: .env
     volumes:
-      - static:/backend_static
+      - static:/app/collected_static
       - media:/app/media
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - internal_network
 
   frontend:
-    image: gelderdasgeld/kittygram_frontend:latest
+    image: ${DOCKERHUB_USERNAME}/kittygram_frontend:latest
     env_file: .env
     volumes:
       - static:/frontend_static
@@ -39,12 +45,12 @@ services:
       - internal_network
 
   nginx:
-    image: gelderdasgeld/kittygram_gateway:latest
+    image: ${DOCKERHUB_USERNAME}/kittygram_gateway:latest
     env_file: .env
     ports:
       - "80:80"
     volumes:
-      - static:/var/html/static
+      - static:/var/html
       - media:/var/html/media
     depends_on:
       - backend
